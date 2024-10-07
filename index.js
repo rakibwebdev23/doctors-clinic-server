@@ -26,10 +26,51 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
+        const usersCollection = client.db("doctorsDB").collection("users");
         const doctorsCollection = client.db("doctorsDB").collection("doctorsList");
         const reviewsCollection = client.db("doctorsDB").collection("patientReviews");
         const appointmentCollection = client.db("doctorsDB").collection("appointment");
 
+        // users related api
+        app.get("/users", async (req, res) => {
+            const result = await usersCollection.find().toArray();
+            res.send(result);
+        })
+
+        // users post to database
+        app.post("/users", async (req, res) => {
+            const user = req.body;
+            const query = { email: user.email }
+            const existingUser = await usersCollection.findOne(query);
+            if (existingUser) {
+                return res.send({ message: 'User already is an uxists', insertedId: null })
+            }
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        });
+
+        // check admin role and create admin
+        app.patch("/users/admin/:id", async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
+        // user deleted
+        app.delete("/users/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await usersCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        // doctors related apis
         app.get("/doctors", async (req, res) => {
             const result = await doctorsCollection.find().toArray();
             res.send(result);
