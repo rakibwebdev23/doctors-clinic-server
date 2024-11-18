@@ -238,7 +238,34 @@ async function run() {
             const deleteResult = await appointmentCollection.deleteMany(query);
             res.send({ paymentResult, deleteResult })
 
-        })
+        });
+
+        // stats for admin home
+        app.get('/admin-stats', verifyToken, verifyAdmin, async (req, res) => {
+            const patients = await usersCollection.estimatedDocumentCount();
+            const doctors = await doctorsCollection.estimatedDocumentCount();
+            const appointments = await paymentsCollection.estimatedDocumentCount();
+
+            const result = await paymentsCollection.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalRevenue: {
+                            $sum: "$visitFee"
+                        }
+                    }
+                }
+            ]).toArray();
+
+            const revenue = result.length > 0 ? result[0].totalRevenue : 0;
+
+            res.send({
+                patients,
+                doctors,
+                appointments,
+                revenue
+            });
+        });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
