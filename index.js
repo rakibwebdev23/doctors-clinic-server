@@ -180,6 +180,12 @@ async function run() {
             res.send(result);
         });
 
+        app.post("/reviews", verifyToken, async (req, res) => {
+            const query = req.body;
+            const result = await reviewsCollection.insertOne(query);
+            res.send(result);
+        });
+
         // Appointment collection
         app.get("/appointment",verifyToken, async (req, res) => {
             const email = req.query.email;
