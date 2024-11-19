@@ -33,6 +33,7 @@ async function run() {
         const reviewsCollection = client.db("doctorsDB").collection("patientReviews");
         const appointmentCollection = client.db("doctorsDB").collection("appointment");
         const paymentsCollection = client.db("doctorsDB").collection("payments");
+        const appointmentContactCollection = client.db("doctorsDB").collection("contact");
 
         // jwt token related api 
         app.post('/jwt', async (req, res) => {
@@ -180,26 +181,45 @@ async function run() {
         });
 
         // Appointment collection
-        app.get("/appointment", async (req, res) => {
+        app.get("/appointment",verifyToken, async (req, res) => {
             const email = req.query.email;
             const query = { email: email }
             const result = await appointmentCollection.find(query).toArray();
             res.send(result);
         });
 
-        app.post("/appointment", async (req, res) => {
+        app.post("/appointment", verifyToken, async (req, res) => {
             const appointmentDoctor = req.body;
             const result = await appointmentCollection.insertOne(appointmentDoctor);
             res.send(result);
         });
 
-        app.delete("/appointment/:id", async (req, res) => {
+        app.delete("/appointment/:id",verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await appointmentCollection.deleteOne(query);
             res.send(result);
         });
 
+        // contact related api
+        app.get("/appointmentContact", verifyToken, verifyAdmin, async (req, res) => {
+            const result = await appointmentContactCollection.find().toArray();
+            res.send(result);
+        });
+
+        app.post("/appointmentContact", verifyToken, async (req, res) => {
+            const email = req.body;
+            const result = await appointmentContactCollection.insertOne(email);
+            res.send(result);
+        });
+
+        app.delete("/appointmentContact/:id", verifyToken, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await appointmentContactCollection.deleteOne(query);
+            res.send(result);
+        })
+        
         // Payment related API
         // Create payment intent
         app.post('/create_payment-intent', verifyToken, async (req, res) => {
